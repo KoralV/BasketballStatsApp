@@ -1,4 +1,4 @@
-package kve.incoming.dto;
+package kve.dto;
 
 import lombok.Getter;
 
@@ -49,6 +49,11 @@ public enum Team {
                 .filter(team -> team.displayName.equalsIgnoreCase(displayName))
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Invalid team name: " + displayName));
+    }
+
+    @Override
+    public String toString() {
+        return this.displayName;
     }
 
 }

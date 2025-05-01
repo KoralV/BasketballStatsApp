@@ -1,0 +1,14 @@
+{
+  "name": "LeBron James",
+  "stats": {
+    "points": 30,
+    "rebounds": 8,
+    "assists": 10,
+    "steals": 2,
+    "blocks": 1,
+    "turnovers": 3,
+    "fouls": 2,
+    "minutesPlayed": 36.5
+  },
+  "team": "Los Angeles Lakers"
+}
