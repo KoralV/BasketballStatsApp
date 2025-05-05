@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.*;
 
 @Async
 @RestController
-@RequestMapping("/api/players-stats")
+@RequestMapping("/api/season-stats")
 public class PlayerStatsController {
 
     private final PlayerService playerService;
@@ -17,7 +17,7 @@ public class PlayerStatsController {
         this.playerService = playerService;
     }
 
-    @GetMapping("/{name}")
+    @GetMapping("/player/{name}")
     public ResponseEntity<Player> getPlayerStatsByName(@PathVariable String name) {
         Player player = playerService.getPlayerByName(name);
         if (player != null) {
@@ -25,5 +25,17 @@ public class PlayerStatsController {
         } else {
             return ResponseEntity.notFound().build();
         }
+    }
+
+    @GetMapping("team/{name}")
+    public ResponseEntity<Object> getTeamStatsByName(@PathVariable String name) {
+        //TODO: return agg stats for team
+//        Stats teamStats = playerService.getTeamStats(name);
+//        if (player != null) {
+//            return ResponseEntity.ok(player);
+//        } else {
+//            return ResponseEntity.notFound().build();
+//        }
+        return ResponseEntity.ok().build();
     }
 }

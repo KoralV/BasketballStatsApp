@@ -20,6 +20,10 @@ public class PlayerService {
         return playerRepository.findByName(name);
     }
 
+//    public Player getTeamByName(String name) {
+//        return playerRepository.findByName(name);
+//    }
+
     public void processGameStats(GameStatsMsg gameStatsMsg) {
         gameStatsMsg.getPlayers().forEach(playerEntry -> {
             //get player from DB if exists and update it. if it doesn't exist - create it.
@@ -31,6 +35,8 @@ public class PlayerService {
                 updateStatsForExistingPlayer(playerEntry, player);
             }
             playerRepository.save(player);
+
+            //TODO: calculate team stats and save in Stats table related to the team
         });
     }
 
@@ -38,6 +44,7 @@ public class PlayerService {
         Stats existing = player.getStats();
         Stats incoming = playerEntry.getStats();
 
+        // TODO: calculate stats as required
         existing.setPoints(existing.getPoints() + incoming.getPoints());
         existing.setRebounds(existing.getRebounds() + incoming.getRebounds());
         existing.setAssists(existing.getAssists() + incoming.getAssists());
