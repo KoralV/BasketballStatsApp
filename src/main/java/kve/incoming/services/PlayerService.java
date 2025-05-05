@@ -16,6 +16,10 @@ public class PlayerService {
         this.playerRepository = playerRepository;
     }
 
+    public Player getPlayerByName(String name) {
+        return playerRepository.findByName(name);
+    }
+
     public void processGameStats(GameStatsMsg gameStatsMsg) {
         gameStatsMsg.getPlayers().forEach(playerEntry -> {
             //get player from DB if exists and update it. if it doesn't exist - create it.
