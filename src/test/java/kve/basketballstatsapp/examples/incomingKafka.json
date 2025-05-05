@@ -1,0 +1,21 @@
+{
+  "teamName": "Lakers",
+  "players": [
+    {
+      "name": "LeBron James",
+      "stats": {
+        "points": 28,
+        "rebounds": 7,
+        "assists": 9
+      }
+    },
+    {
+      "name": "Anthony Davis",
+      "stats": {
+        "points": 22,
+        "rebounds": 10,
+        "assists": 3
+      }
+    }
+  ]
+}

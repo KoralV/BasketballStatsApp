@@ -3,6 +3,7 @@ spring:
     url: jdbc:postgresql://localhost:5432/basketball
     username: user
     password: pass
+
   jpa:
     hibernate:
       ddl-auto: update
@@ -22,3 +23,6 @@ spring:
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+  sql:
+    init:
+      mode: always
