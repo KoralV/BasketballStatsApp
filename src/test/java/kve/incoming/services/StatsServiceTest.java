@@ -11,7 +11,7 @@ import org.springframework.data.util.Pair;
 
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
 import static org.springframework.data.util.Pair.of;
 
@@ -87,36 +87,40 @@ class StatsServiceTest {
 
     @Test
     void testProcessGameStats_updateExistingStats() {
-        // Arrange
-        Team team = Team.BOSTON_CELTICS;
-        Stats newStats = new Stats(20, 5, 7, 1, 1, 2, 3, 32f);
-        Pair<String, Stats> pair = of("Jayson Tatum", newStats);
-        GameStatsMsg msg = new GameStatsMsg(team, List.of(pair));
+        // Given
+        Player existingPlayer = new Player();
+        existingPlayer.setName("John Doe");
+        existingPlayer.setGamesPlayed(1);
 
-        Player player = new Player();
-        player.setName("Jayson Tatum");
-        player.setTeam(team);
-        player.setGamesPlayed(3);
+        Stats existingStats = new Stats(10, 5, 2, 1, 0, 2, 3, 30f); // ממוצע נוכחי
+        PlayerSeasonStats existingPlayerStats = new PlayerSeasonStats();
+        existingPlayerStats.setPlayerName("John Doe");
+        existingPlayerStats.setSeason("2025");
+        existingPlayerStats.setStats(existingStats);
 
-        Stats oldStats = new Stats(21, 6, 6, 2, 2, 2, 2, 30f);
-        PlayerSeasonStats existingSeasonStats = new PlayerSeasonStats();
-        existingSeasonStats.setPlayerName("Jayson Tatum");
-        existingSeasonStats.setSeason("2025");
-        existingSeasonStats.setStats(oldStats);
+        Stats newGameStats = new Stats(20, 7, 4, 3, 1, 1, 2, 35f); // נתונים של משחק חדש
 
-        TeamSeasonStats teamStats = new TeamSeasonStats();
-        teamStats.setStats(new Stats(100, 40, 30, 5, 5, 10, 15, 120f));
-        teamStats.setGamesPlayed(3);
+        when(playerRepository.findByName("John Doe")).thenReturn(existingPlayer);
+        when(playerSeasonStatsRepository.findByNameAndSeason("John Doe", "2025")).thenReturn(existingPlayerStats);
+        when(teamSeasonStatsRepository.findByTeamAndSeason(Team.BOSTON_CELTICS, "2025")).thenReturn(null); // New team
 
-        when(playerRepository.findByName("Jayson Tatum")).thenReturn(player);
-        when(playerSeasonStatsRepository.findByNameAndSeason("Jayson Tatum", "2025")).thenReturn(existingSeasonStats);
-        when(teamSeasonStatsRepository.findByTeamAndSeason(team, "2025")).thenReturn(teamStats);
+        GameStatsMsg msg = new GameStatsMsg(Team.BOSTON_CELTICS, List.of(Pair.of("John Doe", newGameStats)));
 
-        // Act
         statsService.processGameStats(msg);
 
-        // Assert player stats were updated
-        verify(playerSeasonStatsRepository).save(any(PlayerSeasonStats.class));
-        verify(teamSeasonStatsRepository).save(any(TeamSeasonStats.class));
+
+        ArgumentCaptor<PlayerSeasonStats> playerStatsCaptor = ArgumentCaptor.forClass(PlayerSeasonStats.class);
+        verify(playerSeasonStatsRepository).save(playerStatsCaptor.capture());
+
+        Stats updatedStats = playerStatsCaptor.getValue().getStats();
+
+        assertEquals(15, updatedStats.getPoints());
+        assertEquals(6, updatedStats.getRebounds());
+        assertEquals(3, updatedStats.getAssists());
+        assertEquals(2, updatedStats.getSteals());
+        assertEquals(0, updatedStats.getBlocks());
+        assertEquals(1, updatedStats.getTurnovers());
+        assertEquals(2, updatedStats.getFouls());
+        assertEquals(32.5f, updatedStats.getMinutesPlayed(), 0.01);
     }
 }
