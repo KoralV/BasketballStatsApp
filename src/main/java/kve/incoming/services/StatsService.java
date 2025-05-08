@@ -138,7 +138,7 @@ public class StatsService {
     }
 
     private double newAvg(double oldAvg, double newVal, int count) {
-        return (oldAvg * count + newVal) / (count + 1);
+        return (oldAvg * (count-1) + newVal) / count;
     }
 
 }

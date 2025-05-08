@@ -17,7 +17,7 @@ public class PlayerSeasonStatsRepository {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public PlayerSeasonStats findByNameAndSeason(String season, String name) {
+    public PlayerSeasonStats findByNameAndSeason(String name, String season) {
         String sql = "SELECT * FROM players_season_stats WHERE player_name = ? and season = ?";
         return jdbcTemplate.query(sql, new Object[]{name, season}, rs -> {
             if (rs.next()) {
