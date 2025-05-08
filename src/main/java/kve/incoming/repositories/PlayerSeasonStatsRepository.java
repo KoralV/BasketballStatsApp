@@ -19,7 +19,7 @@ public class PlayerSeasonStatsRepository {
 
     public PlayerSeasonStats findByNameAndSeason(String season, String name) {
         String sql = "SELECT * FROM players_season_stats WHERE player_name = ? and season = ?";
-        return jdbcTemplate.query(sql, new Object[]{name}, rs -> {
+        return jdbcTemplate.query(sql, new Object[]{name, season}, rs -> {
             if (rs.next()) {
                 return mapRowToPlayer(rs);
             }

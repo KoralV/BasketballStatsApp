@@ -34,15 +34,13 @@ public class StatsService {
     public void processGameStats(GameStatsMsg gameStatsMsg) {
         String season = getCurrentSeason();
 
-        TeamSeasonStats teamSeasonStats = getOrCreateTeamSeasonStats(gameStatsMsg, season);
-
         List<Stats> playersStatsForSeason = gameStatsMsg.getPlayersStats()
                 .stream()
                 .map(playerRecord -> calculatePlayerStats(playerRecord, gameStatsMsg.getTeamName(), season))
                 .toList();
 
         Stats gameStats = aggregatePlayerStats(playersStatsForSeason);
-        teamSeasonStats.setStats(recalculateAvg(teamSeasonStats.getGamesPlayed(), teamSeasonStats.getStats(), gameStats));
+        TeamSeasonStats teamSeasonStats = getOrCreateTeamSeasonStats(gameStatsMsg, season, gameStats);
         teamSeasonStatsRepository.save(teamSeasonStats);
     }
 
@@ -81,15 +79,17 @@ public class StatsService {
 
     }
 
-    private TeamSeasonStats getOrCreateTeamSeasonStats(GameStatsMsg gameStatsMsg, String season) {
+    private TeamSeasonStats getOrCreateTeamSeasonStats(GameStatsMsg gameStatsMsg, String season, Stats gameStats) {
         TeamSeasonStats teamSeasonStats = teamSeasonStatsRepository.findByTeamAndSeason(gameStatsMsg.getTeamName(), season);
         if (teamSeasonStats == null) {
             teamSeasonStats = new TeamSeasonStats();
             teamSeasonStats.setTeamName(gameStatsMsg.getTeamName());
             teamSeasonStats.setSeason(season);
+            teamSeasonStats.setStats(gameStats);
             teamSeasonStats.setGamesPlayed(1);
         } else {
             teamSeasonStats.setGamesPlayed(teamSeasonStats.getGamesPlayed() + 1);
+            teamSeasonStats.setStats(recalculateAvg(teamSeasonStats.getGamesPlayed(), teamSeasonStats.getStats(), gameStats));
         }
         return teamSeasonStats;
     }
