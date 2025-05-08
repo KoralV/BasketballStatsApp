@@ -1,7 +1,6 @@
 package kve.incoming.repositories;
 
 import kve.dto.Player;
-import kve.dto.Stats;
 import kve.dto.Team;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
@@ -32,30 +31,17 @@ public class PlayerRepository {
         Player existing = findByName(player.getName());
         if (existing == null) {
             jdbcTemplate.update(
-                    "INSERT INTO players (name, team, points, rebounds, assists, steals, blocks, turnovers, fouls, minutes_played) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    "INSERT INTO players (name, team, games_played) VALUES (?, ?, ?)",
                     player.getName(),
                     player.getTeam().getDisplayName(),
-                    player.getStats().getPoints(),
-                    player.getStats().getRebounds(),
-                    player.getStats().getAssists(),
-                    player.getStats().getSteals(),
-                    player.getStats().getBlocks(),
-                    player.getStats().getTurnovers(),
-                    player.getStats().getFouls(),
-                    player.getStats().getMinutesPlayed()
+                    player.getGamesPlayed()
             );
         } else {
             jdbcTemplate.update(
-                    "UPDATE players SET points = ?, rebounds = ?, assists = ?, steals = ?, blocks = ?, turnovers = ?, fouls = ?, minutes_played = ? WHERE name = ?",
-                    player.getStats().getPoints(),
-                    player.getStats().getRebounds(),
-                    player.getStats().getAssists(),
-                    player.getStats().getSteals(),
-                    player.getStats().getBlocks(),
-                    player.getStats().getTurnovers(),
-                    player.getStats().getFouls(),
-                    player.getStats().getMinutesPlayed(),
-                    player.getName()
+                    "UPDATE players SET games_played = ?, team = ? WHERE name = ?",
+                    player.getName(),
+                    player.getTeam().getDisplayName(),
+                    player.getGamesPlayed()
             );
         }
     }
@@ -64,16 +50,7 @@ public class PlayerRepository {
         Player player = new Player();
         player.setName(rs.getString("name"));
         player.setTeam(Team.fromName(rs.getString("team")));
-        Stats stats = new Stats();
-        stats.setPoints(rs.getInt("points"));
-        stats.setRebounds(rs.getInt("rebounds"));
-        stats.setAssists(rs.getInt("assists"));
-        stats.setSteals(rs.getInt("steals"));
-        stats.setBlocks(rs.getInt("blocks"));
-        stats.setTurnovers(rs.getInt("turnovers"));
-        stats.setFouls(rs.getInt("fouls"));
-        stats.setMinutesPlayed(rs.getFloat("minutes_played"));
-        player.setStats(stats);
+        player.setGamesPlayed(rs.getInt("games_played"));
         return player;
     }
 }

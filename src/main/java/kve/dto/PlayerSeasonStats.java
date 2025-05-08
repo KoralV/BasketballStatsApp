@@ -7,14 +7,12 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 @Data
-public class Player {
+public class PlayerSeasonStats {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
     @NotBlank
-    private String name;
-    private Team team;
-    private int gamesPlayed;
-
+    private String playerName;
+    private Stats stats;
+    private String season;
 }

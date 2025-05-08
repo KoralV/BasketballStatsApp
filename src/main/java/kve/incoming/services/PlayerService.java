@@ -1,67 +1,97 @@
 package kve.incoming.services;
 
-import kve.dto.GameStatsMsg;
-import kve.dto.Player;
-import kve.dto.Stats;
-import kve.dto.Team;
+import kve.dto.*;
 import kve.incoming.repositories.PlayerRepository;
+import kve.incoming.repositories.PlayerSeasonStatsRepository;
+import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
+
+import java.time.Year;
 
 @Service
 public class PlayerService {
 
     private final PlayerRepository playerRepository;
+    private final PlayerSeasonStatsRepository playerSeasonStatsRepository;
 
-    public PlayerService(PlayerRepository playerRepository) {
+    public PlayerService(PlayerRepository playerRepository, PlayerSeasonStatsRepository playerSeasonStatsRepository) {
         this.playerRepository = playerRepository;
+        this.playerSeasonStatsRepository = playerSeasonStatsRepository;
     }
 
     public Player getPlayerByName(String name) {
         return playerRepository.findByName(name);
     }
 
-//    public Player getTeamByName(String name) {
-//        return playerRepository.findByName(name);
-//    }
-
     public void processGameStats(GameStatsMsg gameStatsMsg) {
-        gameStatsMsg.getPlayers().forEach(playerEntry -> {
-            //get player from DB if exists and update it. if it doesn't exist - create it.
-            Player player = playerRepository.findByName(playerEntry.getName());
+        gameStatsMsg.getPlayersStats().stream().forEach(playerRecord -> {
 
-            if (player == null) {
-                player = createNewPlayerWithStats(gameStatsMsg.getTeamName(), playerEntry);
+            Player player = getExistingPlayerOrCreateNew(gameStatsMsg.getTeamName(), playerRecord.getFirst());
+            String season = getCurrentSeason();
+
+            // calculate player stats
+            PlayerSeasonStats playerSeasonStats = playerSeasonStatsRepository.findByNameAndSeason(player.getName(), season);
+            if (playerSeasonStats == null) {
+                //first game for the season - reset games for the player
+                player.setGamesPlayed(1);
+                playerRepository.save(player);
+
+                playerSeasonStats = new PlayerSeasonStats();
+                playerSeasonStats.setPlayerName(player.getName());
+                playerSeasonStats.setSeason(season);
+                playerSeasonStats.setStats(playerRecord.getSecond());
             } else {
-                updateStatsForExistingPlayer(playerEntry, player);
+                recalculatePlayerSeasonStats(playerRecord, playerSeasonStats, player);
             }
-            playerRepository.save(player);
+            playerSeasonStatsRepository.save(playerSeasonStats);
 
-            //TODO: calculate team stats and save in Stats table related to the team
+            //calculate team stats
+
+
         });
     }
 
-    private static void updateStatsForExistingPlayer(Player playerEntry, Player player) {
-        Stats existing = player.getStats();
-        Stats incoming = playerEntry.getStats();
-
-        // TODO: calculate stats as required
-        existing.setPoints(existing.getPoints() + incoming.getPoints());
-        existing.setRebounds(existing.getRebounds() + incoming.getRebounds());
-        existing.setAssists(existing.getAssists() + incoming.getAssists());
-        existing.setSteals(existing.getSteals() + incoming.getSteals());
-        existing.setBlocks(existing.getBlocks() + incoming.getBlocks());
-        existing.setTurnovers(existing.getTurnovers() + incoming.getTurnovers());
-        existing.setFouls(existing.getFouls() + incoming.getFouls());
-        existing.setMinutesPlayed(existing.getMinutesPlayed() + incoming.getMinutesPlayed());
+    private void recalculatePlayerSeasonStats(Pair<String, Stats> playerRecord, PlayerSeasonStats playerSeasonStats, Player player) {
+        Stats incoming = playerRecord.getSecond();
+        Stats existing = playerSeasonStats.getStats();
+        existing.setPoints((int) newAvg(existing.getPoints(), incoming.getPoints(), player.getGamesPlayed()));
+        existing.setRebounds((int) newAvg(existing.getRebounds(), incoming.getRebounds(), player.getGamesPlayed()));
+        existing.setAssists((int) newAvg(existing.getAssists(), incoming.getAssists(), player.getGamesPlayed()));
+        existing.setSteals((int) newAvg(existing.getSteals(), incoming.getSteals(), player.getGamesPlayed()));
+        existing.setBlocks((int) newAvg(existing.getBlocks(), incoming.getBlocks(), player.getGamesPlayed()));
+        existing.setTurnovers((int) newAvg(existing.getTurnovers(), incoming.getTurnovers(), player.getGamesPlayed()));
+        existing.setFouls((int) newAvg(existing.getFouls(), incoming.getFouls(), player.getGamesPlayed()));
+        existing.setMinutesPlayed((float) newAvg(existing.getMinutesPlayed(), incoming.getMinutesPlayed(), player.getGamesPlayed()));
     }
 
-    private static Player createNewPlayerWithStats(Team team, Player playerEntry) {
+
+    private Player getExistingPlayerOrCreateNew(Team team, String playerName) {
+        Player player = playerRepository.findByName(playerName);
+
+        if (player == null) {
+            player = createNewPlayer(team, playerName);
+        }
+        return player;
+    }
+
+    private Player createNewPlayer(Team team, String playerName) {
         Player player;
         player = new Player();
-        player.setName(playerEntry.getName());
+        player.setName(playerName);
         player.setTeam(team);
-        player.setStats(playerEntry.getStats());
+        player.setGamesPlayed(1);
+        playerRepository.save(player);
         return player;
+    }
+
+
+    //assuming the current season is always the latest one and represented by the year - can be changed later
+    private String getCurrentSeason() {
+        return String.valueOf(Year.now().getValue());
+    }
+
+    private double newAvg(double oldAvg, double newVal, int count) {
+        return (oldAvg * count + newVal) / (count + 1);
     }
 
 }
